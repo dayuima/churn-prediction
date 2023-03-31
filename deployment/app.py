@@ -2,8 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
-import tensorflow as tf
-
+import tensorflow
 
 with open('full_pipeline.pkl', 'rb') as file_1:
   model_pipeline = joblib.load(file_1)
@@ -15,36 +14,30 @@ model_ann = load_model('churn_model.h5')
 st.title("Customer Churn Prediction")
 
 membership_category = st.selectbox('Membership Category',('No Membership', 'Basic Membership', 'Silver Membership', 'Premium Membership', 'Gold Membership', 'Platinum Membership'), index=1)
-st.write(membership_category)
+
 
 avg_transaction_value = st.number_input('Average Transaction Value :', min_value =  800.460000, max_value = 99914.050000, value = 800.460000)
-st.write(avg_transaction_value)
+
 
 points_in_wallet = st.number_input('Points In Wallet :', min_value =  0.000000, max_value = 2069.069761, value = 0.000000)
-st.write(points_in_wallet)
+
 
 feedback = st.selectbox('Feedback',('Poor Website', 'Poor Customer Service', 'Too many ads', 'Poor Product Quality', 'No reason specified', 'Products always in Stock', 'Reasonable Price', 'Quality Customer Care', 'User Friendly Website'), index=1)
-st.write(feedback)
-
 
 df_inf = pd.DataFrame({
     'membership_category':[membership_category],
     'avg_transaction_value':[avg_transaction_value],
     'points_in_wallet':[points_in_wallet],
-    'feedback':[feedback],
+    'feedback':[feedback]
 })
 
-model_ann1 = model_ann.predict(df_inf[['pregnancies','glucose','bloodpressure','skinthickness','insulin','bmi','diabetespedigreefunction','age']])
-
-if st.button('Predict'): 
-    final_result_ann = model_ann.predict(df_inf[['membership_category','avg_transaction_value','points_in_wallet','feedback']])
-    st.write('Hasil Prediksi: ')
-    if final_result_ann == 1:
-        st.subheader('Churn')
+if st.button('Predict'):
+    data_inf_transform = model_pipeline.transform(df_inf)
+    y_pred_inf = model_ann.predict(data_inf_transform)
+    y_pred_inf = np.where(y_pred_inf >= 0.5, 1, 0)
+    churn_status = np.where(y_pred_inf == 0, "No", "Yes")
+    
+    if churn_status == "No":
+        st.success(f"The customer is predicted to not churn.")
     else:
-        st.subheader('No Churn')
-
-
-
-
-
+        st.error(f"The customer is predicted to churn.")
